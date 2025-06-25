@@ -28,7 +28,7 @@ class QuizParticipant(models.Model):
     invitation_token = models.CharField(max_length=64, unique=True, null=True, blank=True)
     accepted = models.BooleanField(default=False)
     started_at = models.DateTimeField(null=True, blank=True)
-    submitted_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     score = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -94,3 +94,16 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class ParticipantAnswer(models.Model):
+    participant = models.ForeignKey(Participant, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
+    answered_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("participant", "question")

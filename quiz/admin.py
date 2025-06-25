@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Choice, Participant, Question, Quiz, QuizParticipant
+from .models import Choice, Participant, ParticipantAnswer, Question, Quiz, QuizParticipant
 
 
 class ChoiceInline(admin.TabularInline):
@@ -47,6 +47,10 @@ class QuizParticipantAdmin(admin.ModelAdmin):
     exclude = ("created_at",)
     list_filter = ['accepted']
     autocomplete_fields = ['participant', 'quiz']
+    search_fields = [
+        'participant__user__email',
+        'quiz__title',
+    ]
 
     # Reorder fields
     fields = [
@@ -56,7 +60,7 @@ class QuizParticipantAdmin(admin.ModelAdmin):
         'invitation_token',
         'accepted',
         'started_at',
-        'submitted_at',
+        'completed_at',
         'score',
     ]
 
@@ -75,3 +79,9 @@ class ChoiceAdmin(admin.ModelAdmin):
     exclude = ("created_at",)
     search_fields = ['text']
 
+
+@admin.register(ParticipantAnswer)
+class ParticipantAnswerAdmin(admin.ModelAdmin):
+    list_display = ['participant', 'question', 'selected_choice', 'answered_at']
+    list_filter = ['answered_at']
+    search_fields = ['participant__user__email', 'question__text']
