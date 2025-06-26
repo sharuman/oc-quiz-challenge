@@ -45,7 +45,8 @@ class QuizAdmin(admin.ModelAdmin):
 class QuizParticipantAdmin(admin.ModelAdmin):
     list_display = ['participant', 'quiz', 'invited_at', 'accepted', 'score']
     exclude = ("created_at",)
-    list_filter = ['accepted']
+    # list_filter = ['accepted']
+    readonly_fields = ("accepted_at",)
     autocomplete_fields = ['participant', 'quiz']
     search_fields = [
         'participant__user__email',
@@ -58,7 +59,7 @@ class QuizParticipantAdmin(admin.ModelAdmin):
         'quiz',
         'invited_at',
         'invitation_token',
-        'accepted',
+        'accepted_at',
         'started_at',
         'completed_at',
         'score',

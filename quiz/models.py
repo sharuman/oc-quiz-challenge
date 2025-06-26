@@ -26,12 +26,16 @@ class Participant(models.Model):
 class QuizParticipant(models.Model):
     invited_at = models.DateTimeField(default=timezone.now)
     invitation_token = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
-    accepted = models.BooleanField(default=False)
+    accepted_at = models.DateTimeField(null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     score = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def accepted(self):
+        return bool(self.accepted_at)
 
     # Relationships
     participant = models.ForeignKey('Participant', on_delete=models.CASCADE)
