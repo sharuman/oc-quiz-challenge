@@ -109,3 +109,10 @@ class RefreshTokenView(APIView):
         # Customize error response
         error = serializer.errors.get("non_field_errors") or serializer.errors.get("refresh")
         return Response({"detail": error[0] if error else "Invalid input."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ProtectedMeView(APIView):
+    def get(self, request):
+        return Response({
+            "message": f"Hello, {request.user.email}!",
+        })
