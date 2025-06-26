@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.serializers import (
     ParticipantActivationSerializer,
@@ -13,6 +14,7 @@ from .models import UserToken
 
 
 class ActivateParticipantView(APIView):
+    permission_classes = [AllowAny]
 
     @extend_schema(
         request=ParticipantActivationSerializer,
@@ -52,6 +54,7 @@ class ActivateParticipantView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
 
     @extend_schema(
         request=LoginSerializer,
@@ -78,6 +81,7 @@ class LoginView(APIView):
 
 
 class RefreshTokenView(APIView):
+    permission_classes = [AllowAny]
 
     @extend_schema(
         request=TokenRefreshSerializer,
