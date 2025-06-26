@@ -103,3 +103,10 @@ class TokenRefreshSerializer(serializers.Serializer):
             "access": new_access,
             "refresh": str(new_refresh)
         }
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'email', 'first_name', 'last_name']  # Add more if needed
+        read_only_fields = fields

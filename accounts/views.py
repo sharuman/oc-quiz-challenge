@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -6,7 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.serializers import (
     ParticipantActivationSerializer,
     LoginSerializer,
-    TokenRefreshSerializer
+    TokenRefreshSerializer,
+    UserSerializer
 )
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
@@ -111,8 +113,8 @@ class RefreshTokenView(APIView):
         return Response({"detail": error[0] if error else "Invalid input."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class ProtectedMeView(APIView):
-    def get(self, request):
-        return Response({
-            "message": f"Hello, {request.user.email}!",
-        })
+class ProtectedMeView(RetrieveAPIView):
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user
