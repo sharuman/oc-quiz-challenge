@@ -17,7 +17,7 @@ class QuestionInline(admin.TabularInline):
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
     exclude = ("created_at",)
-    list_display = ('email', 'full_name', 'created_at', 'updated_at')
+    list_display = ('user__username', 'email', 'full_name', 'created_at', 'updated_at')
     search_fields = ['user__email']
 
     def email(self, obj):
