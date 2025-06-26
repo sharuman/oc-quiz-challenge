@@ -25,7 +25,7 @@ class Participant(models.Model):
 # Pivot model betwen Quiz and Participiant
 class QuizParticipant(models.Model):
     invited_at = models.DateTimeField(default=timezone.now)
-    invitation_token = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    invitation_token = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
     accepted = models.BooleanField(default=False)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -39,11 +39,6 @@ class QuizParticipant(models.Model):
 
     class Meta:
         unique_together = ('participant', 'quiz')
-
-    def save(self, *args, **kwargs):
-        if not self.invitation_token:
-            self.invitation_token = uuid.uuid4().hex
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.participant.user.email} in {self.quiz.title}"
