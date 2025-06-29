@@ -66,6 +66,9 @@ class Quiz(models.Model):
         related_name='quizzes'
     )
 
+    class Meta:
+        verbose_name_plural = "Quizzes"
+
     def __str__(self):
         return self.title
 
