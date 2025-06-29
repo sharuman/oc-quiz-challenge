@@ -77,12 +77,18 @@ class SubmitAnswerSerializer(serializers.ModelSerializer):
         if not is_participant:
             raise serializers.ValidationError("You are not allowed to answer this quiz.")
         
+        # Check if participant has already answered this question
         if ParticipantAnswer.objects.filter(
             participant=participant,
             quiz=quiz,
             question=question
         ).exists():
             raise serializers.ValidationError("You have already answered this question.")
+
+        # Check if selected choice belongs to the question
+        selected_choice_id = data.get('selected_choice').id
+        if not question.choices.filter(pk=selected_choice_id).exists():
+            raise serializers.ValidationError("Selected choice is not valid for this question.")
 
         # Store for use in create()
         self.context.update({

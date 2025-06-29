@@ -5,6 +5,17 @@ from quiz.models import QuizParticipant
 
 class InvitationFlowTests(BaseQuizTestCase):
 
+    # Test if unauthenticated submission is rejected
+    def test_submit_unauthenticated_user(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.post(
+            self.answer_url,
+            {'selected_choice': self.choice_yes.id},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # Test if submission before activation is forbidden
     def test_submit_before_activation_forbidden(self):
         # User is inactive and hasn't activated via token
         answer_url = reverse('submit-answer', args=[self.quiz.id, self.question.id])
@@ -16,6 +27,7 @@ class InvitationFlowTests(BaseQuizTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    # Test if activation succeeds and sets user active, clears token, returns JWTs
     def test_activation_success(self):
         response = self.activate(password='newpassword')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -28,7 +40,7 @@ class InvitationFlowTests(BaseQuizTestCase):
         self.assertIn('refresh', response.data)
         self.assertEqual(response.data['user']['email'], self.user.email)
 
-    # Participant activation should fail if invalid token is provided
+    # Test if activation cannot be used twice
     def test_activation_invalid_token(self):
         response = self.activate(token='invalid-token', password='invalid-pass')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -37,7 +49,7 @@ class InvitationFlowTests(BaseQuizTestCase):
             any('valid uuid' in str(err).lower() for err in errors)
         )
 
-    # Once an invitation token has been used, it can’t be used again
+    # Test if activation cannot be used twice
     def test_activation_twice(self):
         # First activation
         response1 = self.activate(password='firstpass')

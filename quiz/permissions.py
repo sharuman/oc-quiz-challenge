@@ -3,7 +3,7 @@ from quiz.models import QuizParticipant
 
 
 class IsActivatedParticipant(permissions.BasePermission):
-    message = "You must accept the invitation before submitting answers."
+    message = "You are not allowed to answer this quiz."
 
     def has_object_permission(self, request, view, obj):
         participant = getattr(request.user, 'participant_profile', None)
