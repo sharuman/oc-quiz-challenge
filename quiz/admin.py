@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Avg
 from .models import Choice, Participant, ParticipantAnswer, Question, Quiz, QuizParticipant
 
 
@@ -25,15 +26,71 @@ class ParticipantAdmin(admin.ModelAdmin):
 
     def full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
-    
+
+
+class QuizParticipantInline(admin.TabularInline):
+    model = QuizParticipant
+    fields = (
+        'participant', 
+        'started_at', 
+        'completed_at', 
+        'percent_complete', 
+        'score'
+    )
+    readonly_fields = (
+        'started_at', 
+        'completed_at', 
+        'percent_complete', 
+        'score'
+    )
+    extra = 0
+
+    def percent_complete(self, obj):
+        total = obj.quiz.questions.count()
+        if not total:
+            return "0 %"
+        answered = obj.participantanswer_set.count()
+        return f"{answered / total * 100:.2f} %"
+
+    percent_complete.short_description = 'Progress'
+
 
 @admin.register(Quiz)
 class QuizAdmin(admin.ModelAdmin):
-    list_display = ("title", "creator", "created_at")
+    list_display = (
+        'title', 
+        'creator', 
+        'participant_count',
+        'started_count', 
+        'completed_count', 
+        'average_score'
+    )
     exclude = ("created_at",)
     readonly_fields = ("creator",)
     search_fields = ['title']
-    inlines = [QuestionInline]
+    inlines = [QuestionInline, QuizParticipantInline]
+
+    def participant_count(self, obj):
+        """Total number of invited participants."""
+        return obj.quizparticipant_set.count()
+    participant_count.short_description = 'Invited'
+
+    def started_count(self, obj):
+        """How many have started (started_at is not null)."""
+        return obj.quizparticipant_set.filter(started_at__isnull=False).count()
+    started_count.short_description = 'Started'
+
+    def completed_count(self, obj):
+        """How many have completed (completed_at is not null)."""
+        return obj.quizparticipant_set.filter(completed_at__isnull=False).count()
+    completed_count.short_description = 'Completed'
+
+    def average_score(self, obj):
+        """Average of all non-null scores."""
+        avg = obj.quizparticipant_set.filter(score__isnull=False) \
+                  .aggregate(avg_score=Avg('score'))['avg_score']
+        return f"{avg:.2f}" if avg is not None else '-'
+    average_score.short_description = 'Avg Score'
 
     def save_model(self, request, obj, form, change):
         if not change:
