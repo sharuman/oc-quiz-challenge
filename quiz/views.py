@@ -1,9 +1,11 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from .models import Quiz
+from .models import Quiz, QuizParticipant, ParticipantAnswer
 from .serializers import QuizSerializer, QuizDetailSerializer, SubmitAnswerSerializer
 
 
@@ -24,6 +26,41 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'retrieve':
             return QuizDetailSerializer  # shows nested questions + answers
         return QuizSerializer
+    
+    @action(detail=True, methods=['get'])
+    def progress(self, request, pk=None):
+        quiz = get_object_or_404(self.get_queryset(), pk=pk)
+
+        try:
+            qp = QuizParticipant.objects.get(
+                quiz=quiz,
+                participant=request.user.participant_profile
+            )
+        except QuizParticipant.DoesNotExist:
+            return Response(
+                {"detail": "You are not a participant of this quiz."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        total = quiz.questions.count()
+        answered = ParticipantAnswer.objects.filter(
+            quiz=quiz, participant=qp.participant
+        ).count()
+        correct = ParticipantAnswer.objects.filter(
+            quiz=quiz,
+            participant=qp.participant,
+            selected_choice__is_correct=True
+        ).count()
+
+        return Response({
+            "started_at":       qp.started_at,
+            "completed_at":     qp.completed_at,
+            "total_questions":  total,
+            "answered":         answered,
+            "percent_complete": round(answered / total * 100, 2) if total else 0,
+            "current_score":    round(correct  / total * 100, 2) if total else 0,
+            "final_score":      qp.score,
+        })
 
 
 @extend_schema(

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import (
     Quiz,
@@ -103,9 +104,44 @@ class SubmitAnswerSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        return ParticipantAnswer.objects.update_or_create(
-            participant=self.context['participant'],
-            quiz=self.context['quiz'],
-            question=self.context['question'],
+        participant = self.context['participant']
+        quiz = self.context['quiz']
+        question = self.context['question']
+
+        # 1) Mark quiz start if this is their first answer
+        qp, _ = QuizParticipant.objects.get_or_create(
+            quiz=quiz,
+            participant=participant,
+        )
+        if qp.started_at is None:
+            qp.started_at = timezone.now()
+            qp.save(update_fields=['started_at'])
+
+        # 2) Create or update the participant’s answer
+        answer, _ = ParticipantAnswer.objects.update_or_create(
+            participant=participant,
+            quiz=quiz,
+            question=question,
             defaults={'selected_choice': validated_data['selected_choice']},
-        )[0]
+        )
+
+        # 3) Check if participant has answered all questions
+        total_questions = quiz.questions.count()
+        answered_count = ParticipantAnswer.objects.filter(
+            participant=participant,
+            quiz=quiz,
+        ).count()
+
+        if answered_count >= total_questions:
+            # 4) Compute and store final score
+            correct_count = ParticipantAnswer.objects.filter(
+                participant=participant,
+                quiz=quiz,
+                selected_choice__is_correct=True
+            ).count()
+            qp.completed_at = timezone.now()
+            qp.score = (correct_count / total_questions) * 100
+
+        qp.save(update_fields=['started_at', 'completed_at', 'score'])
+        
+        return answer
