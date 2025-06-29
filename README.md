@@ -34,8 +34,9 @@ The following commands have been tested from devcontainer in VSC
 5. `python manage.py test` (optional)
 
 ## API Documentation
-Accessible at `/api/docs/`.
+Swagger is ccessible at `/api/docs/`.
 
 # NOTES
+- For simplicity, the token must be communicated to the participant "manually" (no email service has been implemented). Use Django admin site.
 - Multiple concurrent sessions are not supported --> Only oner pair of token per user
 - User cannot change the answers
