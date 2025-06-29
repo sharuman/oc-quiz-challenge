@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from .models import Quiz, QuizParticipant, ParticipantAnswer
+from .models import Quiz, Question, QuizParticipant, ParticipantAnswer
 from .serializers import (
     QuizSerializer,
     QuizDetailSerializer,
@@ -78,12 +78,19 @@ class SubmitAnswerView(APIView):
     permission_classes = [IsActivatedParticipant]
 
     def post(self, request, quiz_id, question_id):
+        quiz = get_object_or_404(Quiz, pk=quiz_id)
+        question = get_object_or_404(Question, pk=question_id, quiz=quiz)
+        
+        # This ensures permissions run after object retrieval,
+        # giving correct 404 vs 403 semantics.
+        self.check_object_permissions(request, question)
+
         serializer = SubmitAnswerSerializer(
             data=request.data,
             context={
                 'request': request,
-                'quiz_id': quiz_id,
-                'question_id': question_id,
+                'quiz': quiz,
+                'question': question,
             }
         )
         if serializer.is_valid():

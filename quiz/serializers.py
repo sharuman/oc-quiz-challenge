@@ -61,23 +61,13 @@ class SubmitAnswerSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = self.context['request'].user
-
-        quiz_id = self.context.get('quiz_id')
-        question_id = self.context.get('question_id')
-
-        if not quiz_id or not question_id:
-            raise serializers.ValidationError("Quiz and question must be provided.")
+        question = self.context.get('question')
+        quiz = question.quiz
         
         try:
             participant = user.participant_profile
         except Participant.DoesNotExist:
             raise serializers.ValidationError("Participant profile not found.")
-
-        try:
-            quiz = Quiz.objects.get(id=quiz_id)
-            question = Question.objects.get(id=question_id, quiz=quiz)
-        except (Quiz.DoesNotExist, Question.DoesNotExist):
-            raise serializers.ValidationError("Invalid quiz or question.")
 
         # Check that user is assigned to this quiz
         is_participant = QuizParticipant.objects.filter(
@@ -118,11 +108,11 @@ class SubmitAnswerSerializer(serializers.ModelSerializer):
             qp.save(update_fields=['started_at'])
 
         # 2) Create or update the participant’s answer
-        answer, _ = ParticipantAnswer.objects.update_or_create(
+        answer = ParticipantAnswer.objects.create(
             participant=participant,
             quiz=quiz,
             question=question,
-            defaults={'selected_choice': validated_data['selected_choice']},
+            selected_choice=validated_data['selected_choice'],
         )
 
         # 3) Check if participant has answered all questions
@@ -145,6 +135,7 @@ class SubmitAnswerSerializer(serializers.ModelSerializer):
         qp.save(update_fields=['started_at', 'completed_at', 'score'])
         
         return answer
+
 
 class QuizProgressSerializer(serializers.Serializer):
     """
