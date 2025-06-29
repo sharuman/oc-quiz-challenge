@@ -3,4 +3,5 @@ venv
 staticfiles
 *.sqlite3
 .*
+!.env.example
 *.egg-info
