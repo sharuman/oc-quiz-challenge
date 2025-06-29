@@ -145,3 +145,15 @@ class SubmitAnswerSerializer(serializers.ModelSerializer):
         qp.save(update_fields=['started_at', 'completed_at', 'score'])
         
         return answer
+
+class QuizProgressSerializer(serializers.Serializer):
+    """
+    Serializer for the quiz progress endpoint.
+    """
+    started_at = serializers.DateTimeField(allow_null=True)
+    completed_at = serializers.DateTimeField(allow_null=True)
+    total_questions = serializers.IntegerField()
+    answered = serializers.IntegerField()
+    percent_complete = serializers.FloatField()
+    current_score = serializers.FloatField()
+    final_score = serializers.FloatField()

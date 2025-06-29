@@ -6,7 +6,13 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from .models import Quiz, QuizParticipant, ParticipantAnswer
-from .serializers import QuizSerializer, QuizDetailSerializer, SubmitAnswerSerializer
+from .serializers import (
+    QuizSerializer,
+    QuizDetailSerializer,
+    QuizProgressSerializer,
+    SubmitAnswerSerializer
+)
+from .permissions import IsActivatedParticipant
 
 
 class QuizViewSet(viewsets.ReadOnlyModelViewSet):
@@ -27,21 +33,21 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
             return QuizDetailSerializer  # shows nested questions + answers
         return QuizSerializer
     
-    @action(detail=True, methods=['get'])
+    @extend_schema(
+        responses={200: QuizProgressSerializer},
+        tags=["quizzes"]
+    )
+    @action(
+        detail=True,
+        methods=['get'],
+        permission_classes=[IsActivatedParticipant]
+    )
     def progress(self, request, pk=None):
         quiz = get_object_or_404(self.get_queryset(), pk=pk)
-
-        try:
-            qp = QuizParticipant.objects.get(
+        qp = QuizParticipant.objects.get(
                 quiz=quiz,
                 participant=request.user.participant_profile
             )
-        except QuizParticipant.DoesNotExist:
-            return Response(
-                {"detail": "You are not a participant of this quiz."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
         total = quiz.questions.count()
         answered = ParticipantAnswer.objects.filter(
             quiz=quiz, participant=qp.participant
@@ -69,6 +75,8 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
     responses={201: OpenApiResponse(description="Answer submitted successfully")}
 )
 class SubmitAnswerView(APIView):
+    permission_classes = [IsActivatedParticipant]
+
     def post(self, request, quiz_id, question_id):
         serializer = SubmitAnswerSerializer(
             data=request.data,
